@@ -5,8 +5,8 @@ from pathlib import Path
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.face_service import verify_person, has_face
 
+from app.face_service import verify_person, add_owner_embedding, rebuild_all_embeddings
 
 app = FastAPI(title="Face Door AI Service")
 
@@ -97,12 +97,14 @@ async def add_owner_image(
         with open(image_path, "wb") as buffer:
             shutil.copyfileobj(file.file, buffer)
 
-        if not has_face(str(image_path)):
+        embedding_created = add_owner_embedding(owner_name, str(image_path))
+
+        if not embedding_created:
             image_path.unlink(missing_ok=True)
             raise HTTPException(
                 status_code=400,
                 detail="No face detected in uploaded image",
-            )
+    )
 
         return {
             "success": True,
@@ -157,3 +159,13 @@ async def verify_face(file: UploadFile = File(...)):
 
     finally:
         temp_path.unlink(missing_ok=True)
+
+@app.post("/embeddings/rebuild")
+def rebuild_embeddings():
+    result = rebuild_all_embeddings()
+
+    return {
+        "success": True,
+        "message": "EMBEDDINGS_REBUILT",
+        "result": result,
+    }
