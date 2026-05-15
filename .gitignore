@@ -4,10 +4,15 @@ __pycache__/
 *.pyc
 .pytest_cache/
 
-# Local uploaded images / biometric data
-known_faces/
-uploads/
-test_images/
+# Ignore private image data
+known_faces/*
+uploads/*
+test_images/*
+
+# But keep empty folders
+!known_faces/.gitkeep
+!uploads/.gitkeep
+!test_images/.gitkeep
 
 # Environment variables
 .env
