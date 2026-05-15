@@ -1,10 +1,17 @@
 import time
+import threading
 import cv2
 import requests
 
 
 API_URL = "http://localhost:8000/verify-face"
 CHECK_INTERVAL = 5
+
+latest_result = {
+    "action": "WAITING",
+    "person": None,
+    "is_processing": False,
+}
 
 
 def send_frame_to_api(frame):
@@ -26,18 +33,34 @@ def send_frame_to_api(frame):
         return None
 
 
+def verify_in_background(frame):
+    latest_result["is_processing"] = True
+    print("Verifying...")
+
+    result = send_frame_to_api(frame)
+
+    if result:
+        print(result)
+        latest_result["action"] = result.get("action", "DENY")
+        latest_result["person"] = result.get("person")
+    else:
+        latest_result["action"] = "ERROR"
+        latest_result["person"] = None
+
+    latest_result["is_processing"] = False
+
+
 def main():
     cap = cv2.VideoCapture(0)
 
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
+
     if not cap.isOpened():
         print("Cannot open camera")
         return
 
     last_check_time = 0
-    last_action = "WAITING"
-    last_person = None
 
     while True:
         ret, frame = cap.read()
@@ -45,22 +68,33 @@ def main():
         if not ret:
             print("Cannot read frame")
             break
+
         frame = cv2.resize(frame, (640, 480))
         now = time.time()
 
-        if now - last_check_time >= CHECK_INTERVAL:
+        if (
+            now - last_check_time >= CHECK_INTERVAL
+            and not latest_result["is_processing"]
+        ):
             last_check_time = now
-            result = send_frame_to_api(frame)
+            frame_to_send = frame.copy()
 
-            if result:
-                print(result)
-                last_action = result.get("action", "DENY")
-                last_person = result.get("person")
+            thread = threading.Thread(
+                target=verify_in_background,
+                args=(frame_to_send,),
+                daemon=True,
+            )
+            thread.start()
 
-        label = last_action
+        action = latest_result["action"]
+        person = latest_result["person"]
 
-        if last_person:
-            label += f" - {last_person}"
+        if latest_result["is_processing"]:
+            label = "PROCESSING..."
+        else:
+            label = action
+            if person:
+                label += f" - {person}"
 
         cv2.putText(
             frame,
@@ -68,7 +102,17 @@ def main():
             (30, 50),
             cv2.FONT_HERSHEY_SIMPLEX,
             1,
-            (0, 255, 0) if last_action == "OPEN" else (0, 0, 255),
+            (0, 255, 0) if action == "OPEN" else (0, 0, 255),
+            2,
+        )
+
+        cv2.putText(
+            frame,
+            "Q: quit",
+            (30, 90),
+            cv2.FONT_HERSHEY_SIMPLEX,
+            0.7,
+            (255, 255, 255),
             2,
         )
 
