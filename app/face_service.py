@@ -6,8 +6,9 @@ import math
 from deepface import DeepFace
 
 
-KNOWN_FACES_DIR = Path("known_faces")
-EMBEDDINGS_DIR = Path("embeddings")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+KNOWN_FACES_DIR = PROJECT_ROOT / "known_faces"
+EMBEDDINGS_DIR = PROJECT_ROOT / "embeddings"
 EMBEDDINGS_DIR.mkdir(exist_ok=True)
 
 MODEL_NAME = "Facenet"

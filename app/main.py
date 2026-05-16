@@ -1,5 +1,7 @@
 import shutil
 import uuid
+import re
+from fastapi.responses import FileResponse
 from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
@@ -10,13 +12,16 @@ from app.face_service import verify_person, add_owner_embedding, rebuild_all_emb
 
 app = FastAPI(title="Face Door AI Service")
 
-UPLOAD_DIR = Path("uploads")
-KNOWN_FACES_DIR = Path("known_faces")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = PROJECT_ROOT / "uploads"
+KNOWN_FACES_DIR = PROJECT_ROOT / "known_faces"
+ENROLL_PAGE = PROJECT_ROOT / "static" / "enroll.html"
 
 UPLOAD_DIR.mkdir(exist_ok=True)
 KNOWN_FACES_DIR.mkdir(exist_ok=True)
 
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
+OWNER_NAME_PATTERN = re.compile(r"^[A-Za-z0-9_-]{1,50}$")
 
 
 app.add_middleware(
@@ -40,6 +45,16 @@ def validate_image_file(file: UploadFile):
     return file_ext
 
 
+def validate_owner_name(owner_name: str) -> str:
+    if not OWNER_NAME_PATTERN.fullmatch(owner_name):
+        raise HTTPException(
+            status_code=400,
+            detail="Owner name can only contain letters, numbers, underscore, or hyphen",
+        )
+
+    return owner_name
+
+
 @app.get("/")
 def root():
     return {
@@ -52,6 +67,14 @@ def root():
 def health_check():
     return {
         "status": "ok",
+    }
+
+
+@app.get("/iot/ping")
+def iot_ping():
+    return {
+        "success": True,
+        "message": "AI_SERVER_READY",
     }
 
 
@@ -86,6 +109,7 @@ async def add_owner_image(
     file: UploadFile = File(...)
 ):
     file_ext = validate_image_file(file)
+    owner_name = validate_owner_name(owner_name)
 
     owner_dir = KNOWN_FACES_DIR / owner_name
     owner_dir.mkdir(parents=True, exist_ok=True)
@@ -104,7 +128,7 @@ async def add_owner_image(
             raise HTTPException(
                 status_code=400,
                 detail="No face detected in uploaded image",
-    )
+            )
 
         return {
             "success": True,
@@ -169,3 +193,7 @@ def rebuild_embeddings():
         "message": "EMBEDDINGS_REBUILT",
         "result": result,
     }
+
+@app.get("/enroll")
+def enroll_page():
+    return FileResponse(ENROLL_PAGE)

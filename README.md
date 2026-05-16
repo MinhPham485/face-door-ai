@@ -66,6 +66,21 @@ Expected response:
 }
 ```
 
+IoT connection check:
+
+```bash
+curl http://localhost:8000/iot/ping
+```
+
+Expected response:
+
+```json
+{
+  "success": true,
+  "message": "AI_SERVER_READY"
+}
+```
+
 ---
 
 ## 3. Add owner image
