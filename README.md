@@ -46,10 +46,22 @@ python -c "from deepface import DeepFace; print('DeepFace OK')"
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Swagger UI:
+Project docs:
 
 ```txt
 http://localhost:8000/docs
+```
+
+Camera verify page:
+
+```txt
+http://localhost:8000/verify
+```
+
+Swagger UI:
+
+```txt
+http://localhost:8000/api-docs
 ```
 
 Health check:
@@ -149,6 +161,14 @@ Example response:
 
 ## 5. Verify face
 
+Open the browser verify page:
+
+```txt
+http://localhost:8000/verify
+```
+
+This page uses your browser camera and sends frames to the same API below.
+
 Endpoint:
 
 ```http
@@ -218,6 +238,12 @@ No face response:
 ## 6. How IoT should use the response
 
 IoT only needs to check `action`.
+
+Button flow:
+
+```txt
+button pressed -> capture image -> POST /verify-face -> read action -> open/deny
+```
 
 ```txt
 if action == "OPEN":

@@ -6,16 +6,24 @@ from pathlib import Path
 
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 
 from app.face_service import verify_person, add_owner_embedding, rebuild_all_embeddings
 
-app = FastAPI(title="Face Door AI Service")
+app = FastAPI(
+    title="Face Door AI Service",
+    docs_url="/api-docs",
+    redoc_url=None,
+)
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
+STATIC_DIR = PROJECT_ROOT / "static"
 UPLOAD_DIR = PROJECT_ROOT / "uploads"
 KNOWN_FACES_DIR = PROJECT_ROOT / "known_faces"
-ENROLL_PAGE = PROJECT_ROOT / "static" / "enroll.html"
+ENROLL_PAGE = STATIC_DIR / "enroll.html"
+VERIFY_PAGE = STATIC_DIR / "verify.html"
+DOCS_PAGE = STATIC_DIR / "docs.html"
 
 UPLOAD_DIR.mkdir(exist_ok=True)
 KNOWN_FACES_DIR.mkdir(exist_ok=True)
@@ -31,6 +39,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
 def validate_image_file(file: UploadFile):
@@ -60,6 +70,10 @@ def root():
     return {
         "service": "Face Door AI Service",
         "status": "running",
+        "docs": "/docs",
+        "api_docs": "/api-docs",
+        "enroll": "/enroll",
+        "verify": "/verify",
     }
 
 
@@ -194,6 +208,16 @@ def rebuild_embeddings():
         "result": result,
     }
 
-@app.get("/enroll")
+@app.get("/docs", include_in_schema=False)
+def docs_page():
+    return FileResponse(DOCS_PAGE)
+
+
+@app.get("/enroll", include_in_schema=False)
 def enroll_page():
     return FileResponse(ENROLL_PAGE)
+
+
+@app.get("/verify", include_in_schema=False)
+def verify_page():
+    return FileResponse(VERIFY_PAGE)

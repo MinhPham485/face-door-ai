@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Door AI Docs</title>
+  <link rel="stylesheet" href="/static/css/app.css" />
+</head>
+<body>
+  <main>
+    <header class="page-header">
+      <h1>Face Door AI Docs</h1>
+      <p>Quick links and API examples for the AI service and IoT integration.</p>
+      <div class="actions">
+        <a class="button" href="/enroll">Open Enrollment Page</a>
+        <a class="button secondary" href="/verify">Open Verify Page</a>
+        <a class="button secondary" href="/api-docs">Open Swagger API</a>
+      </div>
+    </header>
+
+    <section class="grid">
+      <article class="card">
+        <h2>Enroll Owner</h2>
+        <p>Use the camera page to add 3-5 face images for one owner.</p>
+        <pre><span class="method">GET</span>/enroll</pre>
+      </article>
+
+      <article class="card">
+        <h2>IoT Ping</h2>
+        <p>Use this first from ESP32 or another IoT client to check the AI server connection.</p>
+        <pre>curl http://localhost:8000/iot/ping</pre>
+      </article>
+
+      <article class="card">
+        <h2>Web Verify</h2>
+        <p>Use the browser camera to test the same face verification flow as the IoT device.</p>
+        <pre><span class="method">GET</span>/verify</pre>
+      </article>
+
+      <article class="card">
+        <h2>IoT Verify API</h2>
+        <p>Send a camera frame from ESP32-CAM or another client and read only the <code>action</code> field.</p>
+        <pre>curl -X POST http://localhost:8000/verify-face \
+  -F "file=@test_images/anhtest1.jpg"</pre>
+      </article>
+
+      <article class="card">
+        <h2>Response Rule</h2>
+        <p>For the IoT side, open the door only when action is exactly <code>OPEN</code>.</p>
+        <pre>{
+  "action": "OPEN"
+}</pre>
+      </article>
+    </section>
+  </main>
+</body>
+</html>

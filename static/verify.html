@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Face Verify</title>
+  <link rel="stylesheet" href="/static/css/app.css" />
+  <script src="/static/js/verify.js" defer></script>
+</head>
+<body>
+  <main>
+    <h1>Face Verify</h1>
+    <p class="hint">Bat camera va verify truc tiep tren web. Trang nay dung cung API /verify-face voi IoT.</p>
+
+    <section class="verify-layout">
+      <div class="panel">
+        <div class="controls">
+          <button id="startCameraButton" type="button">Start Camera</button>
+          <button id="stopCameraButton" type="button" class="secondary" disabled>Stop Camera</button>
+          <button id="startVerifyButton" type="button" class="secondary">Start Verify</button>
+          <button id="stopVerifyButton" type="button" class="secondary" disabled>Stop Verify</button>
+          <button id="singleVerifyButton" type="button" class="secondary">Verify Once</button>
+        </div>
+
+        <video id="video" autoplay playsinline muted></video>
+        <canvas id="canvas"></canvas>
+      </div>
+
+      <aside class="panel result">
+        <div id="statusBox" class="status">WAITING</div>
+        <div class="row">
+          <span class="label">Action</span>
+          <span id="actionValue" class="value">-</span>
+        </div>
+        <div class="row">
+          <span class="label">Person</span>
+          <span id="personValue" class="value">-</span>
+        </div>
+        <div class="row">
+          <span class="label">Distance</span>
+          <span id="distanceValue" class="value">-</span>
+        </div>
+        <div class="row">
+          <span class="label">Message</span>
+          <span id="messageValue" class="value">-</span>
+        </div>
+        <div class="row">
+          <span class="label">Last check</span>
+          <span id="timeValue" class="value">-</span>
+        </div>
+      </aside>
+    </section>
+  </main>
+</body>
+</html>
