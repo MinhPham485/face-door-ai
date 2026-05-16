@@ -8,6 +8,7 @@ const captureButton = document.getElementById("captureButton");
 const autoButton = document.getElementById("autoButton");
 
 const ownerNamePattern = /^[A-Za-z0-9_-]{1,50}$/;
+const captureSize = 640;
 
 let stream = null;
 let isUploading = false;
@@ -101,11 +102,25 @@ async function captureBlob() {
     return null;
   }
 
-  canvas.width = video.videoWidth;
-  canvas.height = video.videoHeight;
+  const cropSize = Math.min(video.videoWidth, video.videoHeight);
+  const sourceX = (video.videoWidth - cropSize) / 2;
+  const sourceY = (video.videoHeight - cropSize) / 2;
+
+  canvas.width = captureSize;
+  canvas.height = captureSize;
 
   const ctx = canvas.getContext("2d");
-  ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+  ctx.drawImage(
+    video,
+    sourceX,
+    sourceY,
+    cropSize,
+    cropSize,
+    0,
+    0,
+    captureSize,
+    captureSize
+  );
 
   return new Promise((resolve) => {
     canvas.toBlob((blob) => resolve(blob), "image/jpeg", 0.95);
