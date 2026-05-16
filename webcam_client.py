@@ -53,9 +53,8 @@ def verify_in_background(frame):
 def main():
     cap = cv2.VideoCapture(0)
 
-    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 640)
-    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 480)
-
+    cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280)
+    cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
     if not cap.isOpened():
         print("Cannot open camera")
         return
@@ -69,7 +68,7 @@ def main():
             print("Cannot read frame")
             break
 
-        frame = cv2.resize(frame, (640, 480))
+
         now = time.time()
 
         if (

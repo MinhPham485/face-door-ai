@@ -14,7 +14,6 @@ EMBEDDINGS_DIR.mkdir(exist_ok=True)
 MODEL_NAME = "Facenet"
 DETECTOR_BACKEND = "opencv"
 
-# Bạn có thể chỉnh threshold sau khi test thực tế
 FACE_DISTANCE_THRESHOLD = 0.25
 
 
