@@ -9,8 +9,7 @@
 const char *ssid = "415B9";
 const char *password = "10anhdeptrai";
 
-#define uS_TO_S_FACTOR 1000000ULL
-#define SLEEP_TIME_SEC 5
+#define PIR_PIN GPIO_NUM_13
 
 // IP máy chạy FastAPI
 const char *SERVER_URL =
@@ -199,22 +198,44 @@ void setup()
 
     delay(1000);
 
-    if (!initCamera())
-    {
-        esp_deep_sleep_start();
-    }
+    esp_sleep_wakeup_cause_t wakeup_reason =
+        esp_sleep_get_wakeup_cause();
 
-    connectWiFi();
-
-    captureAndSend();
-
-    Serial.println(
-        "Going to sleep..."
+    Serial.printf(
+        "Wakeup reason: %d\n",
+        wakeup_reason
     );
 
-    esp_sleep_enable_timer_wakeup(
-        SLEEP_TIME_SEC *
-        uS_TO_S_FACTOR
+    if (
+        wakeup_reason ==
+        ESP_SLEEP_WAKEUP_EXT0
+    )
+    {
+        Serial.println(
+            "Motion detected!"
+        );
+
+        if (!initCamera())
+        {
+            Serial.println(
+                "Camera init failed"
+            );
+        }
+        else
+        {
+            connectWiFi();
+
+            captureAndSend();
+        }
+    }
+
+    Serial.println(
+        "Entering Deep Sleep..."
+    );
+
+    esp_sleep_enable_ext0_wakeup(
+        PIR_PIN,
+        1
     );
 
     delay(100);
