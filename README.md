@@ -1,15 +1,78 @@
-# Face Door AI - Local Setup & API Guide
+# Face Door AI
 
-## 1. Setup
+An AI-powered smart door access control system that combines **ESP32-CAM**, **FastAPI**, and **DeepFace** to perform real-time facial recognition and automatically control door access.
 
-Clone repo:
+The system captures images using an ESP32-CAM, sends them to a backend server for face verification, and returns an authorization result. Authorized users can unlock the door automatically, while unauthorized users are denied access.
+
+## Features
+
+* Real-time facial recognition using DeepFace
+* ESP32-CAM image capture and Wi-Fi communication
+* Automatic door unlocking with servo motor
+* Motion-triggered activation using PIR sensor
+* REST API built with FastAPI
+* Face embedding storage for fast verification
+* Low-power operation with ESP32 Deep Sleep
+* Browser-based camera verification page
+* Owner management and embedding rebuild APIs
+
+---
+
+## System Architecture
+
+```text
+PIR Sensor
+     │
+     ▼
+ESP32-CAM
+     │ HTTP POST
+     ▼
+FastAPI Server
+     │
+     ▼
+DeepFace Verification
+     │
+ ┌───┴────┐
+ │        │
+ ▼        ▼
+OPEN     DENY
+ │          │
+ ▼          ▼
+Servo      Locked
+```
+
+---
+
+## Technology Stack
+
+### Embedded
+
+* ESP32-CAM (AI Thinker)
+* Arduino Framework
+* Wi-Fi
+* HTTP Client
+* ESP32Servo
+
+### Backend
+
+* Python 3.11+
+* FastAPI
+* DeepFace
+* TensorFlow
+* Uvicorn
+
+---
+
+# Local Setup
+
+## Clone Repository
 
 ```bash
 git clone https://github.com/MinhPham485/face-door-ai.git
 cd face-door-ai
 ```
 
-Tạo virtual environment:
+## Create Virtual Environment
 
 ### macOS / Linux
 
@@ -25,14 +88,14 @@ py -3 -m venv .venv
 .venv\Scripts\Activate.ps1
 ```
 
-Cài dependencies:
+## Install Dependencies
 
 ```bash
 python -m pip install --upgrade pip
 python -m pip install -r requirements.txt
 ```
 
-Test DeepFace:
+## Verify DeepFace Installation
 
 ```bash
 python -c "from deepface import DeepFace; print('DeepFace OK')"
@@ -40,64 +103,26 @@ python -c "from deepface import DeepFace; print('DeepFace OK')"
 
 ---
 
-## 2. Run server
+# Run Server
 
 ```bash
 uvicorn app.main:app --host 0.0.0.0 --port 8000
 ```
 
-Project docs:
+Available endpoints:
 
-```txt
-http://localhost:8000/docs
-```
-
-Camera verify page:
-
-```txt
-http://localhost:8000/verify
-```
-
-Swagger UI:
-
-```txt
-http://localhost:8000/api-docs
-```
-
-Health check:
-
-```bash
-curl http://localhost:8000/health
-```
-
-Expected response:
-
-```json
-{
-  "status": "ok"
-}
-```
-
-IoT connection check:
-
-```bash
-curl http://localhost:8000/iot/ping
-```
-
-Expected response:
-
-```json
-{
-  "success": true,
-  "message": "AI_SERVER_READY"
-}
-```
+| Service            | URL                            |
+| ------------------ | ------------------------------ |
+| API Docs           | http://localhost:8000/api-docs |
+| Camera Verify Page | http://localhost:8000/verify   |
+| Health Check       | http://localhost:8000/health   |
+| IoT Ping           | http://localhost:8000/iot/ping |
 
 ---
 
-## 3. Add owner image
+# API Usage
 
-Endpoint:
+## Add Owner Images
 
 ```http
 POST /owners/{owner_name}/images
@@ -107,94 +132,54 @@ Example:
 
 ```bash
 curl -X POST "http://localhost:8000/owners/minh/images" \
-  -F "file=@test_images/minh_1.jpg"
+-F "file=@test_images/minh_1.jpg"
 ```
 
-Add 3-5 images per owner.
+Recommended:
 
-Check owners:
-
-```bash
-curl http://localhost:8000/owners
-```
-
-Example response:
-
-```json
-{
-  "success": true,
-  "owners": [
-    {
-      "name": "minh",
-      "image_count": 3
-    }
-  ]
-}
-```
+* Add 3–5 images per owner
+* Use different lighting conditions and angles
 
 ---
 
-## 4. Rebuild embeddings
+## Rebuild Embeddings
 
-Run this after adding owner images:
+After adding owner images:
 
 ```bash
 curl -X POST "http://localhost:8000/embeddings/rebuild"
 ```
 
-Example response:
-
-```json
-{
-  "success": true,
-  "message": "EMBEDDINGS_REBUILT",
-  "result": {
-    "minh": {
-      "image_count": 3,
-      "embedding_count": 3
-    }
-  }
-}
-```
+This generates facial embeddings used during verification.
 
 ---
 
-## 5. Verify face
-
-Open the browser verify page:
-
-```txt
-http://localhost:8000/verify
-```
-
-This page uses your browser camera and sends frames to the same API below.
-
-Endpoint:
+## Verify Face
 
 ```http
 POST /verify-face
 ```
 
-Request type:
+Request:
 
-```txt
+```text
 multipart/form-data
 ```
 
 Field:
 
-```txt
-file: jpg/jpeg/png image
+```text
+file
 ```
 
 Example:
 
 ```bash
 curl -X POST "http://localhost:8000/verify-face" \
-  -F "file=@test_images/anhtest1.jpg"
+-F "file=@test_images/sample.jpg"
 ```
 
-Authorized response:
+### Authorized Response
 
 ```json
 {
@@ -207,7 +192,7 @@ Authorized response:
 }
 ```
 
-Denied response:
+### Unauthorized Response
 
 ```json
 {
@@ -220,7 +205,7 @@ Denied response:
 }
 ```
 
-No face response:
+### No Face Detected
 
 ```json
 {
@@ -235,203 +220,124 @@ No face response:
 
 ---
 
-## 6. How IoT should use the response
+# ESP32 Integration
 
-IoT only needs to check `action`.
+Verification flow:
 
-Button flow:
-
-```txt
-button pressed -> capture image -> POST /verify-face -> read action -> open/deny
+```text
+Motion Detected
+      ↓
+Capture Image
+      ↓
+POST /verify-face
+      ↓
+Read action
+      ↓
+OPEN or DENY
 ```
 
-```txt
-if action == "OPEN":
-    unlock door
-else:
-    keep locked
-```
-
-Example pseudo code:
+Example:
 
 ```cpp
-if (action == "OPEN") {
+if (action == "OPEN")
+{
     openDoor();
-} else {
+}
+else
+{
     denyAccess();
 }
 ```
 
----
+Use the server's local IP address:
 
-## 7. Use with ESP32 / IoT device
-
-Run server on the machine that hosts the AI service:
-
-```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
-```
-
-Get local IP of that machine.
-
-### macOS
-
-```bash
-ipconfig getifaddr en0
-```
-
-Example IP:
-
-```txt
-192.168.1.25
-```
-
-IoT device should call:
-
-```txt
-http://192.168.1.25:8000/verify-face
+```text
+http://192.168.x.x:8000/verify-face
 ```
 
 Do not use:
 
-```txt
-http://localhost:8000/verify-face
+```text
+http://localhost:8000
 ```
 
-because `localhost` on ESP32 means the ESP32 itself.
+because localhost on ESP32 refers to the ESP32 itself.
 
 ---
 
-## 8. Webcam local test
+# Testing
 
-Run server first:
+Health check:
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8000
+curl http://localhost:8000/health
 ```
 
-Open another terminal:
+IoT connectivity:
 
 ```bash
-source .venv/bin/activate
+curl http://localhost:8000/iot/ping
+```
+
+Webcam test:
+
+```bash
 python webcam_client.py
 ```
 
-The webcam client sends frames to:
-
-```txt
-http://localhost:8000/verify-face
-```
-
 ---
 
-## 9. Useful curl commands
+# Troubleshooting
 
-Add owner image:
-
-```bash
-curl -X POST "http://localhost:8000/owners/minh/images" \
-  -F "file=@test_images/minh_1.jpg"
-```
-
-List owners:
-
-```bash
-curl http://localhost:8000/owners
-```
-
-Rebuild embeddings:
-
-```bash
-curl -X POST "http://localhost:8000/embeddings/rebuild"
-```
-
-Verify face:
-
-```bash
-curl -X POST "http://localhost:8000/verify-face" \
-  -F "file=@test_images/anhtest1.jpg"
-```
-
-Pretty JSON output with `jq`:
-
-```bash
-curl -X POST "http://localhost:8000/verify-face" \
-  -F "file=@test_images/anhtest1.jpg" | jq
-```
-
-Install `jq` on macOS:
-
-```bash
-brew install jq
-```
-
----
-
-## 10. Troubleshooting
-
-### Port 8000 already in use
+### Port Already In Use
 
 ```bash
 lsof -i :8000
 kill -9 <PID>
 ```
 
-Or run on another port:
+or
 
 ```bash
-uvicorn app.main:app --host 0.0.0.0 --port 8001
+uvicorn app.main:app --port 8001
 ```
 
-### Curl cannot read image file
+### No Face Detected
 
-Error:
+Use images with:
 
-```txt
-curl: (26) Failed to open/read local data from file/application
-```
+* Good lighting
+* Clear frontal face
+* Minimal blur
+* JPG or PNG format
 
-Use the correct file path:
+### Slow First Run
 
-```bash
-curl -X POST "http://localhost:8000/verify-face" \
-  -F "file=@test_images/anhtest1.jpg"
-```
+DeepFace may download model weights during the first execution.
 
-Or absolute path:
-
-```bash
-curl -X POST "http://localhost:8000/verify-face" \
-  -F "file=@/Users/yourname/Downloads/anhtest1.jpg"
-```
-
-### No face detected
-
-Use a clearer image:
-
-```txt
-- face visible
-- enough light
-- not too blurry
-- not too far from camera
-- jpg/png format
-```
-
-### First run is slow
-
-DeepFace may download model weights on first run. Later runs will be faster.
+Subsequent runs will be significantly faster.
 
 ---
 
-## 11. Privacy note
+# Privacy
 
-Do not commit real face images or embeddings.
+Do not commit personal face data or generated embeddings.
 
-These folders should stay ignored:
+Ignored directories:
 
-```txt
+```text
 known_faces/
 uploads/
-test_images/
 embeddings/
+test_images/
 ```
+
+---
+
+# Author
+
+Bui Le Hoang
+Pham Hoang Minh
+
+Computer Engineering Students
+Hanoi University of Science and Technology (HUST)
