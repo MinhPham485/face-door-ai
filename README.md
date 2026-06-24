@@ -336,8 +336,7 @@ test_images/
 
 # Author
 
-Bui Le Hoang
-Pham Hoang Minh
+Bui Le Hoang & Pham Hoang Minh
 
 Computer Engineering Students
 Hanoi University of Science and Technology (HUST)
